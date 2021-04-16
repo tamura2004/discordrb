@@ -6005,21 +6005,26 @@ bot = Discordrb::Bot.new token: TOKEN
 #   nil
 # end
 
-bot.message(start_with: "!game") do |event|
-  magic = rand(1..10)
-  users = bot.users.values.map(&:name)
-  event.respond "hello #{users}. Can you guess my secret number? between 1 and 10"
-  event.user.await!(timeout: 300) do |guess_event|
-    guess = guess_event.message.content.to_i
-    if guess == magic
-      guess_event.respond "you win!"
-      true
-    else
-      guess_event.respond(guess > magic ? "too hight" : "too low")
-      false
-    end
-  end
-  event.respond "My number was #{magic}"
+messages = %w(そうそう うーんどうかな それは違うと思う 無理！)
+
+bot.message do |event|
+  event.respond messages.sample
 end
+
+#   magic = rand(1..10)
+#   users = bot.users.values.map(&:name)
+#   event.respond "hello #{users}. Can you guess my secret number? between 1 and 10"
+#   event.user.await!(timeout: 300) do |guess_event|
+#     guess = guess_event.message.content.to_i
+#     if guess == magic
+#       guess_event.respond "you win!"
+#       true
+#     else
+#       guess_event.respond(guess > magic ? "too hight" : "too low")
+#       false
+#     end
+#   end
+#   event.respond "My number was #{magic}"
+# end
 
 bot.run

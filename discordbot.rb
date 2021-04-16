@@ -5566,7 +5566,7 @@ MONSTERS = [
     specials: [
       "分裂: このプディングが[斬撃]または[電撃]ダメージを受けた時、この プディングのサイズが中型以上であり、かつこのプディングの現在hpが 10以上なら、このプディングは2つに分裂する分裂した2体のブディ ングのhpはどちらも元のプディングの半分(端数切捨て)であり、サイズ 分類は元のプディングよりも1段階小さい。",
       "蜘蛛歩き: このブディングは、登攀が難しい表面を、能力値判定を行な うことなく登攀できる(さかさまに天井を移動する場合も含む) 。",
-      "腐食性の体: このプディングに触れたクリーチャーおよび、このブディ ングから5フィート以内にいてこのプディングに近接攻撃をヒットさせ たクリーチャーは4(1d8)[酸]ダメージを受ける。また、このプディング にヒットした金属または木製の魔法でない武器は腐食する。その武器は ダメージを与えた後に、ダメージ·ロールに永続的かつ累積する - 1ペ ナルティを受ける。このペナルティが - 5に達したなら、その武器は破 壊される。このプディングにヒットした、金属または木製の魔法でない 矢弾は、ダメージを与えた後に破壊される。",
+      "腐食性の体: このプディングに触れたクリーチャーおよび、このブディ ングから5フィート以内にいてこのプディ���グに近接攻撃をヒットさせ たクリーチャーは4(1d8)[酸]ダメージを受ける。また、このプディング にヒットした金属または木製の魔法でない武器は腐食する。その武器は ダメージを与えた後に、ダメージ·ロールに永続的かつ累積する - 1ペ ナルティを受ける。このペナルティが - 5に達したなら、その武器は破 壊される。このプディングにヒットした、金属または木製の魔法でない 矢弾は、ダメージを与えた後に破壊される。",
     ],
   },
   {
@@ -5987,24 +5987,25 @@ require "discordrb"
 TOKEN = ENV["DISCORD_BOT_TOKEN"]
 TOKEN.freeze
 
-bot = Discordrb::Commands::CommandBot.new token: TOKEN, prefix: "/"
+bot = Discordrb::Bot.new token: TOKEN
+# bot = Discordrb::Commands::CommandBot.new token: TOKEN, prefix: "/"
 
-bot.command(:ping) do |event|
-  event.respond "pong"
-end
+# bot.command(:ping) do |event|
+#   event.respond "pong"
+# end
 
-bot.command(:mns) do |event|
-  event.respond card(MONSTERS.sample)
-end
+# bot.command(:mns) do |event|
+#   event.respond card(MONSTERS.sample)
+# end
 
-bot.command(:r) do |event, *args|
-  args.each do |arg|
-    event << dice(arg)
-  end
-  nil
-end
+# bot.command(:r) do |event, *args|
+#   args.each do |arg|
+#     event << dice(arg)
+#   end
+#   nil
+# end
 
-bot.message(:game) do |event|
+bot.message(start_with: "!game") do |event|
   magic = rand(1..10)
   event.respond "Can you guess my secret number? between 1 and 10"
   event.user.await!(timeout: 300) do |guess_event|

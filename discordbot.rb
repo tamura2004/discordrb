@@ -6007,12 +6007,7 @@ bot = Discordrb::Bot.new token: TOKEN
 
 bot.message(start_with: "!game") do |event|
   magic = rand(1..10)
-  users = ""
-  bot.servers.each_value do |srv|
-    srv.users.each do |user|
-      users += user.name
-    end
-  end
+  users = bot.users.values.map(&:name)
   event.respond "hello #{users}. Can you guess my secret number? between 1 and 10"
   event.user.await!(timeout: 300) do |guess_event|
     guess = guess_event.message.content.to_i

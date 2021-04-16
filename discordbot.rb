@@ -5962,6 +5962,9 @@ def dice(s)
     when "*"
       ds = Array.new(k) { d(n, k).sum }
       "#{s.sub(/\*/, "x")} = #{ds.inspect}"
+    when "/"
+      ds = d(n, m).sort.reverse.first(k).sum
+      "#{s.sub(/\*/, "x")} = #{ds.inspect}"
     end
   when 3
     n, _, m = a.map(&:to_i)
@@ -5999,6 +6002,22 @@ bot.command(:r) do |event, *args|
     event << dice(arg)
   end
   nil
+end
+
+bot.message(:game) do |event|
+  magic = rand(1..10)
+  event.respond "Can you guess my secret number? between 1 and 10"
+  event.user.await!(timeout: 300) do |guess_event|
+    guess = guess_event.message.content.to_i
+    if guess == magic
+      guess_event.respond "you win!"
+      true
+    else
+      guess_event.respond(guess > magic ? "too hight" : "too low")
+      false
+    end
+  end
+  event.respond "My number was #{magic}"
 end
 
 bot.run

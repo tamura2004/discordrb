@@ -5944,6 +5944,39 @@ def card(m)
   "#{m[:size]}の#{m[:type]}#{m[:name]}が#{rand(100)}体現れた！"
 end
 
+def d(n, m)
+  Array.new(n) { rand(1..m) }
+end
+
+def dice(s)
+  a = s.scan(/\d+|[^\d]+/)
+
+  case a.size
+  when 5
+    op = a[3]
+    n, _, m, _, k = a.map(&:to_i)
+    case op
+    when "+"
+      ds = d(n, m)
+      "#{s} = #{ds.inspect} + #{k} = #{ds.sum + k}"
+    when "*"
+      ds = Array.new(k) { d(n, k).sum }
+      "#{s} = #{ds.inspect}"
+    end
+  when 3
+    n, _, m = a.map(&:to_i)
+    ds = d(n, m)
+    "#{s} = #{ds.inspect} = #{ds.sum}"
+  when 2
+    _, m = a.map(&:to_i)
+    n = 1
+    ds = d(n, m)
+    "#{s} = #{ds.inspect} = #{ds.sum}"
+  else
+    "まだ若いのよ"
+  end
+end
+
 # pp MONSTERS.sample
 
 require "discordrb"
@@ -5959,6 +5992,16 @@ end
 
 bot.command(:mns) do |event|
   event.respond card(MONSTERS.sample)
+end
+
+bot.command(:mns) do |event, *args|
+  event.respond card(MONSTERS.sample)
+end
+
+bot.command(:r) do |event, *args|
+  args.each do |arg|
+    event << dice(arg)
+  end
 end
 
 bot.run

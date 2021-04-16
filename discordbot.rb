@@ -6005,10 +6005,10 @@ bot = Discordrb::Bot.new token: TOKEN
 #   nil
 # end
 
-messages = %w(そうそう うーんどうかな それは違うと思う 無理！)
+messages = %w(そうそう うーんどうかな それは違うと思う とはいってもね)
 
 bot.message do |event|
-  event.respond messages.sample
+  event.respond "#{messages.sample}「#{event.content}」だよね"
 end
 
 #   magic = rand(1..10)

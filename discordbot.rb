@@ -5961,7 +5961,7 @@ def dice(s)
       "#{s} = #{ds.inspect} + #{k} = #{ds.sum + k}"
     when "*"
       ds = Array.new(k) { d(n, k).sum }
-      "#{s} = #{ds.inspect}"
+      "#{s.sub(/\*/, "x")} = #{ds.inspect}"
     end
   when 3
     n, _, m = a.map(&:to_i)
@@ -5994,14 +5994,11 @@ bot.command(:mns) do |event|
   event.respond card(MONSTERS.sample)
 end
 
-bot.command(:mns) do |event, *args|
-  event.respond card(MONSTERS.sample)
-end
-
 bot.command(:r) do |event, *args|
   args.each do |arg|
     event << dice(arg)
   end
+  nil
 end
 
 bot.run

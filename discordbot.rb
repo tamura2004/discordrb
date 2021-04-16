@@ -5940,6 +5940,44 @@ MONSTERS = [
   },
 ]
 
+ITEMS = [
+  "ポーション·オヴ·グレーター・ヒーリング",
+  "ポーション·オヴ·ファイアー·ブレス",
+  "ポーション·オヴ·レジスタンス",
+  "+1矢弾",
+  "ポーション·オヴ·アニマル·フレンドシップ",
+  "ポーション·オヴ·ヒル·ジャイアント・ストレングス",
+  "ポーション·オヴ·グロウス",
+  "ポーション·オヴ·ウォーター·ブリージング",
+  "呪文の巻物(2レベル)",
+  "呪文の巻物(3レベル)",
+  "バッグ·オヴ·ホールディング",
+  "キオートムズ·オイントメント",
+  "オイル·オヴ·スリッパリネス",
+  "ダスト·オヴ·ディサピアランス",
+  "ダスト·オヴ·ドライネス",
+  "ダスト·オヴ·スニーヅング·アンド·チョーキング",
+  "エレメンタル·ジェム",
+  "フィルター·オヴ·ラヴ",
+  "アルケミー·ジャグ",
+  "キャップ·オヴ·ウォーター·ブリーソング",
+  "クローク·オヴ·ザ·マンタ·レイ",
+  "ドリフトグローブ",
+  "ゴーグルズ·オヴ·ナイト",
+  "ヘルム·オヴ·コンプリヘンディング·ランゲージズ",
+  "イムーヴァブル·ロッド",
+  "ランタン·オヴ·リヴィーリング",
+  "マリナーズ·アーマ",
+  "ミスラル·アーマー",
+  "ポーション·オヴ·ポイズン",
+  "リング·オヴ·スイミング",
+  "ローブ·オヴ·ユースフル·アイテムス",
+  "ロープ·オヴ·クライミング",
+  "サドル·オヴ·ザ·キャヴァリア",
+  "ワンド·オヴ·マジック·ディテク",
+  "ワンド·オヴ·シークレッツランゲージズ",
+]
+
 def card(m)
   "#{m[:size]}の#{m[:type]}#{m[:name]}が#{rand(100)}体現れた！"
 end
@@ -5980,51 +6018,22 @@ def dice(s)
   end
 end
 
-# pp MONSTERS.sample
-
 require "discordrb"
 
 TOKEN = ENV["DISCORD_BOT_TOKEN"]
 TOKEN.freeze
 
 bot = Discordrb::Bot.new token: TOKEN
-# bot = Discordrb::Commands::CommandBot.new token: TOKEN, prefix: "/"
-
-# bot.command(:ping) do |event|
-#   event.respond "pong"
-# end
-
-# bot.command(:mns) do |event|
-#   event.respond card(MONSTERS.sample)
-# end
-
-# bot.command(:r) do |event, *args|
-#   args.each do |arg|
-#     event << dice(arg)
-#   end
-#   nil
-# end
-
-messages = %w(そうそう うーんどうかな それは違うと思う とはいってもね)
 
 bot.message do |event|
-  event.respond "#{event.auther.name}がいうこともわかるけど。#{messages.sample}「#{event.content}」だよね"
+  case event.content
+  when /モンス|もんす|mons|mns/
+    event.respond card(MONSTERS.sample)
+  when /アイテム|あいてむ|item/
+    event.respond ITEMS.sample
+  when /D|d/
+    event.respond dice(event.content)
+  end
 end
-
-#   magic = rand(1..10)
-#   users = bot.users.values.map(&:name)
-#   event.respond "hello #{users}. Can you guess my secret number? between 1 and 10"
-#   event.user.await!(timeout: 300) do |guess_event|
-#     guess = guess_event.message.content.to_i
-#     if guess == magic
-#       guess_event.respond "you win!"
-#       true
-#     else
-#       guess_event.respond(guess > magic ? "too hight" : "too low")
-#       false
-#     end
-#   end
-#   event.respond "My number was #{magic}"
-# end
 
 bot.run

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-source 'https://rubygems.org'
+source "https://rubygems.org"
 
-ruby '2.6.5'
+ruby "2.7.0"
 
-gem 'discordrb'
-gem 'rubocop'
+gem "discordrb"
+gem "rubocop"

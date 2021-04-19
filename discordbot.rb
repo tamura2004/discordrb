@@ -29,7 +29,7 @@ def say(meros)
     n -= 1 if c == "。"
     a, b = b, c
   end
-  return ans
+  return ans.join
 end
 
 bot.message do |event|

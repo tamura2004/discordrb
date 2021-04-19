@@ -11,6 +11,7 @@
 # end
 
 require "discordrb"
+require "yaml"
 require "./game.rb"
 
 TOKEN = ENV["DISCORD_BOT_TOKEN"]
@@ -18,12 +19,27 @@ TOKEN.freeze
 bot = Discordrb::Bot.new token: TOKEN
 g = Game.new
 
+meros = YAML.load(open("meros.yaml").read)
+def say(meros)
+  a,b = ans = ["メロス", "は"]
+  n = 5
+  while n > 0
+    c = dic[[a,b]].keys.sample
+    ans << c
+    n -= 1 if c == "。"
+    a, b = b, c
+  end
+  return ans
+end
+
 bot.message do |event|
   id = event.author.id
   name = event.author.display_name
   pc = g.players[id]
 
   case event.content
+  when /メロス|めろす|走/
+    event << say(meros)
   when /new|create|はじめる|始める/
     if pc
       event << "#{pc.name}は迷宮を彷徨っている"

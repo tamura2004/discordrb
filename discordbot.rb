@@ -24,7 +24,7 @@ def say(meros)
   a,b = ans = ["メロス", "は"]
   n = 5
   while n > 0
-    c = dic[[a,b]].keys.sample
+    c = meros[[a,b]].keys.sample
     ans << c
     n -= 1 if c == "。"
     a, b = b, c

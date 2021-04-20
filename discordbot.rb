@@ -20,11 +20,26 @@ bot = Discordrb::Bot.new token: TOKEN
 g = Game.new
 
 meros = YAML.load(open("meros.yaml").read)
+
 def say(meros)
-  a,b = ans = ["メロス", "は"]
+  a, b = ans = ["メロス", "は"]
   n = 5
   while n > 0
-    c = meros[[a,b]].keys.sample
+    c = meros[[a, b]].keys.sample
+    ans << c
+    n -= 1 if c == "。"
+    a, b = b, c
+  end
+  return ans.join
+end
+
+rodger = YAML.load(open("rodger.yaml").read)
+
+def rodger_say(rodger)
+  a, b = ans = ["ロジャー", "は"]
+  n = 5
+  while n > 0
+    c = rodger[[a, b]].keys.sample
     ans << c
     n -= 1 if c == "。"
     a, b = b, c
@@ -38,6 +53,8 @@ bot.message do |event|
   pc = g.players[id]
 
   case event.content
+  when /ロジャー|ろじゃー|だんじょん|ぼうけん|たたかう/
+    event << rodger_say(rodger)
   when /メロス|めろす|走/
     event << say(meros)
   when /new|create|はじめる|始める/

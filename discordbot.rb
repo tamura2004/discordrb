@@ -12,7 +12,7 @@
 
 require "discordrb"
 require "yaml"
-# require "./game.rb"
+require "./game.rb"
 
 require "./rolldice.rb"
 require "./monsters.rb"
@@ -20,7 +20,7 @@ require "./monsters.rb"
 TOKEN = ENV["DISCORD_BOT_TOKEN"]
 TOKEN.freeze
 bot = Discordrb::Bot.new token: TOKEN
-# g = Game.new
+g = Game.new
 
 meros = YAML.load(open("meros.yaml").read)
 rodger = YAML.load(open("rodger.yaml").read)
@@ -47,7 +47,7 @@ bot.message(contains: /めろす|はしれ/) do |event|
 end
 
 # ダイスボット
-bot.message(contains: /\:.+\:/) do |event|
+bot.message(contains: /\:.*d.*\:/) do |event|
   event.respond rolldice(event.content)
 end
 

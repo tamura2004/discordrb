@@ -1,6 +1,6 @@
 require "./dice"
 
-MONSTERS = [
+M = [
   {
     name: "ゴブリン",
     hp: "2d6",
@@ -21,7 +21,7 @@ class Monster
     @x = x
     @id = @@id
     @@id += 1
-    m = MONSTERS.sample
+    m = M.sample
     @name = m[:name]
     @hp = r m[:hp]
     @ac = m[:ac]

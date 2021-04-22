@@ -1,5 +1,5 @@
 require "./player.rb"
-require "./monsters.rb"
+require "./monster.rb"
 require "./treasure.rb"
 
 # ゲームボード

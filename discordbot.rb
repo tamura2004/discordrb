@@ -12,12 +12,15 @@
 
 require "discordrb"
 require "yaml"
-require "./game.rb"
+# require "./game.rb"
+
+require "./rolldice.rb"
+require "./monsters.rb"
 
 TOKEN = ENV["DISCORD_BOT_TOKEN"]
 TOKEN.freeze
 bot = Discordrb::Bot.new token: TOKEN
-g = Game.new
+# g = Game.new
 
 meros = YAML.load(open("meros.yaml").read)
 rodger = YAML.load(open("rodger.yaml").read)
@@ -33,16 +36,61 @@ def say(dic, name, n)
   return ans.join
 end
 
+# ロジャーボット
+bot.message(contains: /ろじゃー|だんじょん|ばーぐる/) do |event|
+  event.respond say(rodger, "ロジャー", 10)
+end
+
+# メロスボット
+bot.message(contains: /めろす|はしれ/) do |event|
+  event.respond say(meros, "メロス", 5)
+end
+
+# ダイスボット
+bot.message(contains: /\:.+\:/) do |event|
+  event.respond rolldice(event.content)
+end
+
+include Discordrb::Webhooks
+
+# エンベッド練習
+bot.message(contains: /monster/) do |event|
+  mns = MONSTERS.sample
+  pp mns
+  event.channel.send_embed do |embed|
+    embed.title = mns[:name]
+    embed.description = mns[:size] + "の" + mns[:type] + "/" + mns[:alignment] + "/" + mns[:mv]
+    embed.fields << EmbedField.new(name: "AC", value: mns[:ac], inline: true)
+    embed.fields << EmbedField.new(name: "HP", value: mns[:maxHp], inline: true)
+    embed.fields << EmbedField.new(name: "exp", value: mns[:exp], inline: true)
+    %w(筋 敏 耐 知 判 魅).each_with_index do |label, i|
+      embed.fields << EmbedField.new(name: label, value: mns[:ability][i], inline: true)
+    end
+    embed.fields << EmbedField.new(
+      name: "属性",
+      value: mns[:attributes].join("\n"),
+    )
+    embed.fields << EmbedField.new(
+      name: "アクション",
+      value: mns[:actions].join("\n"),
+    )
+    embed.fields << EmbedField.new(
+      name: "特殊攻撃",
+      value: mns[:specials].join("\n"),
+    )
+  end
+end
+
+bot.reaction_add do |event|
+  pp event
+end
+
 bot.message do |event|
   id = event.author.id
   name = event.author.display_name
   pc = g.players[id]
 
   case event.content
-  when /たたか|闘|戦/
-    event << say(rodger, "ロジャー", 10)
-  when /メロス|めろす|走/
-    event << say(meros, "メロス", 5)
   when /new|create|はじめる|始める/
     if pc
       event << "#{pc.name}は迷宮を彷徨っている"

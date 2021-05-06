@@ -24,6 +24,7 @@ g = Game.new
 
 meros = YAML.load(open("meros.yaml").read)
 rodger = YAML.load(open("rodger.yaml").read)
+nanohi = YAML.load(open("nanohi.yaml").read)
 
 def say(dic, name, n)
   a, b = ans = [name, "は"]
@@ -36,6 +37,24 @@ def say(dic, name, n)
   return ans.join
 end
 
+def today(dic)
+  a, b = ans = nil
+  loop do
+    a, b = ans = dic.keys.sample
+    break if b == "年"
+  end
+  while ans.count("。") < 1
+    ans << dic[[a, b]].keys.sample
+    a, b = ans[-2, 2]
+    break if ans.size > 100
+  end
+  return ans.join
+end
+
+bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら/) do |event|
+  event.respond("わちちー")
+end
+
 # ロジャーボット
 bot.message(contains: /ろじゃー|だんじょん|ばーぐる/) do |event|
   event.respond say(rodger, "ロジャー", 10)
@@ -44,6 +63,11 @@ end
 # メロスボット
 bot.message(contains: /めろす|はしれ/) do |event|
   event.respond say(meros, "メロス", 5)
+end
+
+# 何の日ボット
+bot.message(contains: /年|月|日|時|分|秒/) do |event|
+  event.respond today(nanohi)
 end
 
 # ダイスボット

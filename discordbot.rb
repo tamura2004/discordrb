@@ -51,8 +51,18 @@ def today(dic)
   return ans.join
 end
 
+def greet
+  a = "あかさたなはまやらわわわわわぱ".chars
+  i = "いきしちちちちちにひみいりいぴ".chars
+  a.sample + i.sample * 2 + "ー"
+end
+
 bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら/) do |event|
-  event.respond("わちちー")
+  if rand < 0.3
+    event.respond(greet)
+  else
+    event.respond("わちちー")
+  end
 end
 
 # ロジャーボット

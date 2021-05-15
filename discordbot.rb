@@ -26,6 +26,17 @@ meros = YAML.load(open("meros.yaml").read)
 rodger = YAML.load(open("rodger.yaml").read)
 nanohi = YAML.load(open("nanohi.yaml").read)
 
+KEIYOU = open("keiyoushi.txt").readlines(chomp: true)
+MEISHI = open("meishi.txt").readlines(chomp: true)
+
+def kei
+  KEIYOU.sample
+end
+
+def mei
+  MEISHI.sample
+end
+
 def say(dic, name, n)
   a, b = ans = [name, "は"]
   while n > 0
@@ -57,12 +68,20 @@ def greet
   a.sample + i.sample * 2 + "ー"
 end
 
-bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら/) do |event|
-  if rand < 0.3
-    event.respond(greet)
+# 格言ボット
+bot.message(contains: /[るだす？]$/) do |event|
+  if rand < 0.5
+    k = kei
+    event.respond("#{k}#{mei}より#{k}#{mei}。")
   else
-    event.respond("わちちー")
+    n = mei
+    event.respond("#{kei}#{n}より#{kei}#{n}。")
   end
+end
+
+# あいさつボット
+bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら/) do |event|
+  event.respond(greet)
 end
 
 # ロジャーボット

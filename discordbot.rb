@@ -37,28 +37,21 @@ def mei
   MEISHI.sample
 end
 
-def say(dic, name, n)
-  a, b = ans = [name, "は"]
+def say(dic, x, y, n)
+  a, b = ans = nil
+  loop do
+    a, b = ans = dic.keys.sample
+    break if x.nil? && y.nil? && a == "。"
+    break if x == a || y == b
+  end
+
   while n > 0
     c = dic[[a, b]].keys.sample
     ans << c
     n -= 1 if c == "。"
     a, b = b, c
   end
-  return ans.join
-end
-
-def today(dic)
-  a, b = ans = nil
-  loop do
-    a, b = ans = dic.keys.sample
-    break if b == "年"
-  end
-  while ans.count("。") < 1
-    ans << dic[[a, b]].keys.sample
-    a, b = ans[-2, 2]
-    break if ans.size > 100
-  end
+  ans.shift if ans.first == "。"
   return ans.join
 end
 
@@ -80,23 +73,23 @@ bot.message(contains: /[るだす？]$/) do |event|
 end
 
 # あいさつボット
-bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら/) do |event|
+bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら|ちち/) do |event|
   event.respond(greet)
 end
 
 # ロジャーボット
 bot.message(contains: /ろじゃー|だんじょん|ばーぐる/) do |event|
-  event.respond say(rodger, "ロジャー", 10)
+  event.respond say(rodger, nil, nil, 3)
 end
 
 # メロスボット
 bot.message(contains: /めろす|はしれ/) do |event|
-  event.respond say(meros, "メロス", 5)
+  event.respond say(meros, nil, nil, 3)
 end
 
 # 何の日ボット
-bot.message(contains: /年|月|日|時|分|秒/) do |event|
-  event.respond today(nanohi)
+bot.message(contains: /月|日|時|分|秒/) do |event|
+  event.respond say(nanohi, nil, "年", 1)
 end
 
 # ダイスボット

@@ -1,26 +1,9 @@
-# require "./monsters.rb"
-# require "./items.rb"
-# require "./rolldice.rb"
-
-# def card(m)
-#   "#{m[:size]}の#{m[:type]}#{m[:name]}が#{rand(100)}体現れた！"
-# end
-
-# def d(n, m)
-#   Array.new(n) { rand(1..m) }
-# end
-
 require "discordrb"
 require "yaml"
-require "./game.rb"
-
-require "./rolldice.rb"
-require "./monsters.rb"
 
 TOKEN = ENV["DISCORD_BOT_TOKEN"]
 TOKEN.freeze
 bot = Discordrb::Bot.new token: TOKEN
-g = Game.new
 
 meros = YAML.load(open("meros.yaml").read)
 rodger = YAML.load(open("rodger.yaml").read)
@@ -74,6 +57,7 @@ end
 
 # あいさつボット
 bot.message(contains: /おは|こん|おや|堕|ぐっど|ただいま|てら|ちち/) do |event|
+  pp event.channel.name
   event.respond(greet)
 end
 
@@ -99,76 +83,140 @@ end
 
 include Discordrb::Webhooks
 
-# エンベッド練習
-bot.message(contains: /monster/) do |event|
-  mns = MONSTERS.sample
-  pp mns
-  event.channel.send_embed do |embed|
-    embed.title = mns[:name]
-    embed.description = mns[:size] + "の" + mns[:type] + "/" + mns[:alignment] + "/" + mns[:mv]
-    embed.fields << EmbedField.new(name: "AC", value: mns[:ac], inline: true)
-    embed.fields << EmbedField.new(name: "HP", value: mns[:maxHp], inline: true)
-    embed.fields << EmbedField.new(name: "exp", value: mns[:exp], inline: true)
-    %w(筋 敏 耐 知 判 魅).each_with_index do |label, i|
-      embed.fields << EmbedField.new(name: label, value: mns[:ability][i], inline: true)
-    end
-    embed.fields << EmbedField.new(
-      name: "属性",
-      value: mns[:attributes].join("\n"),
-    )
-    embed.fields << EmbedField.new(
-      name: "アクション",
-      value: mns[:actions].join("\n"),
-    )
-    embed.fields << EmbedField.new(
-      name: "特殊攻撃",
-      value: mns[:specials].join("\n"),
-    )
-  end
-end
-
 bot.reaction_add do |event|
   pp event
 end
 
-bot.message do |event|
-  id = event.author.id
-  name = event.author.display_name
-  pc = g.players[id]
+class Player
+  attr_accessor :name
+  attr_accessor :race
+  attr_accessor :klass
+  attr_accessor :lv
+  attr_accessor :rpw
+  attr_accessor :pw
+  attr_accessor :rhp
+  attr_accessor :hp
+  attr_accessor :sp
 
-  case event.content
-  when /new|create|はじめる|始める/
-    if pc
-      event << "#{pc.name}は迷宮を彷徨っている"
-      event << pc.to_s
+  def initialize(id)
+    @id = id
+    @lv = 1
+  end
+
+  def set_race(data)
+    _, name, @rpw, @rhp = data
+    @race = name
+    @pw = lv + rpw
+    @hp = lv + rhp
+  end
+
+  def set_klass(data)
+    _, name, sp = data
+    @klass = name
+    @sp = sp
+  end
+
+  def levelup
+    @lv += 1
+    @pw = lv + rpw
+    @hp = lv + rhp
+    "#{name}はレベルアップ！#{klass} #{status}"
+  end
+
+  def to_s
+    "#{name}:#{race}の#{klass}#{lv} #{status}"
+  end
+
+  def status
+    "#{pw}/#{hp}"
+  end
+end
+
+def d3
+  rand(3) - 1
+end
+
+class Monster
+  attr_accessor :name, :lv, :pw, :hp
+  NAME = %w(ゴブリン オーク バグベア スケルトン ミノタウルス ゴーレム ドラゴン)
+
+  def initialize
+    @lv = rand(7)
+    @name = NAME[lv]
+    @pw = lv + d3
+    @hp = lv + d3
+  end
+
+  def to_s
+    "#{name} 攻#{pw}/防#{hp}"
+  end
+end
+
+players = {}
+monsters = []
+races = [
+  [/エルフ|える/, "エルフ", 2, 0],
+  [/ドワーフ|どわ/, "ドワーフ", 0, 2],
+  [/人間/, "人間", 1, 1],
+]
+klasses = [
+  [/そう|僧侶/, "僧侶", "治癒"],
+  [/まほ|魔法/, "魔法使い", "火球"],
+  [/とう|盗賊/, "盗賊", "毒罠"],
+  [/せん|戦士/, "戦士", "剣盾"],
+]
+
+bot.message do |event|
+  next if event.channel.name != "狂王の祭祀場" && event.channel.name != "ボットデバッグ用"
+
+  id = event.author.id
+  auther = event.author.display_name
+  pc = players[id]
+  text = event.content
+
+  case
+  when pc.nil? || text =~ /りせっと/
+    players[id] = Player.new(id)
+    event.respond("#{auther}さんのキャラクターネームは？")
+  when pc.name.nil?
+    name = event.content
+    pc.name = name
+    event << "#{auther}さんのキャラクターは、#{name}さんです。"
+    event << "種族は？"
+  when pc.race.nil?
+    race = races.find do |r|
+      event.content =~ r[0]
+    end || races[-1]
+    pc.set_race(race)
+    event << "#{pc.name}さんは#{pc.race}。クラスは？"
+  when pc.klass.nil?
+    klass = klasses.find do |c|
+      event.content =~ c[0]
+    end || klasses[-1]
+    pc.set_klass(klass)
+    event << "#{pc.name}:#{pc.race}の#{pc.klass} 攻#{pc.pw}/防#{pc.hp} #{pc.sp}"
+  when text =~ /たた/
+    monsters << Monster.new if monsters.empty?
+    m = monsters[0]
+    dm = pc.pw + d3
+    event << "#{pc.name}は#{m.to_s}に攻撃。#{dm}ダメージ。"
+    m.hp -= dm
+    if m.hp <= 0
+      event << "#{m.to_s}は死んだ。"
+      monsters.shift
+      event << pc.levelup
     else
-      pc = g.add_player(id, name)
-      event << "#{pc.name}が迷宮に入った"
-      event << pc.to_s
-    end
-  else
-    next if pc.nil?
-    msgs = case event.content
-      when /north|up|北|きた|上|うえ/
-        g.move(pc, :up)
-      when /west|left|西|にし|左|ひだり/
-        g.move(pc, :left)
-      when /east|right|東|ひがし|右|みぎ/
-        g.move(pc, :right)
-      when /sorth|down|南|みなみ|下|した/
-        g.move(pc, :down)
-      when /みる|見る|see/
-        [g.see(pc)]
-      when /すてーたす|ステータス/
-        [pc.to_s]
+      dm = m.pw + d3
+      event << "#{m.to_s}の反撃。#{dm}ダメージ。"
+      pc.hp -= dm
+      if pc.hp <= 0
+        pc.pw += 1
+        pc.hp = 1
+        event << "#{pc.name}は地面に倒れソウルを失った。攻#{pc.pw}/防#{pc.hp}"
       else
-        []
       end
-    msgs.each do |msg|
-      event << msg
     end
   end
-  nil
 end
 
 bot.run

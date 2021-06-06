@@ -97,10 +97,15 @@ class Player
   attr_accessor :rhp
   attr_accessor :hp
   attr_accessor :sp
+  attr_accessor :place
+  attr_accessor :gp
+  attr_accessor :exp
 
   def initialize(id)
     @id = id
     @lv = 1
+    @gp = 100
+    @exp = 0
   end
 
   def set_race(data)
@@ -117,18 +122,22 @@ class Player
   end
 
   def levelup
-    @lv += 1
-    @pw = lv + rpw
-    @hp = lv + rhp
-    "#{name}はレベルアップ！#{klass} #{status}"
+    @exp += @lv
+    if @lv * 10 <= @exp
+      @lv += 1
+      @pw = lv + rpw
+      @hp = lv + rhp
+      "#{name}はレベルアップ！#{klass} #{status}"
+    else
+      "#{name}は#{@lv}経験値を得た。"
+    end
   end
 
   def to_s
-    "#{name}:#{race}の#{klass}#{lv} #{status}"
   end
 
   def status
-    "#{pw}/#{hp}"
+    "#{race}の#{klass}#{lv} #{pw}/#{hp} #{gp}gp #{exp}xp"
   end
 end
 
@@ -166,6 +175,10 @@ klasses = [
   [/せん|戦士/, "戦士", "剣盾"],
 ]
 
+def select_command(rs, a)
+  rs.index{|r| r =~ a} || rand(rs.size)
+end
+
 bot.message do |event|
   next if event.channel.name != "狂王の祭祀場" && event.channel.name != "ボットデバッグ用"
 
@@ -194,27 +207,80 @@ bot.message do |event|
       event.content =~ c[0]
     end || klasses[-1]
     pc.set_klass(klass)
-    event << "#{pc.name}:#{pc.race}の#{pc.klass} 攻#{pc.pw}/防#{pc.hp} #{pc.sp}"
-  when text =~ /たた/
+    event << "#{pc.name}はカント寺院の灰から目覚めた。"
+    event << "#{pc.to_s}"
+    event << "王城と武器屋と防具屋が見える。#{pc.name}はどうする？"
+    pc.place = "リルガミン"
+  when pc.place == "リルガミン"
+    case select_command([/お|王/,/ぶ|武/,/ぼ|防/], event.content)
+    when 0
+      event << "#{pc.name}は王城に行った。空の玉座の隣に火防女が立つ。"
+      event << "「迷宮で王の護符を探して下さい」"
+      pc.gp += pc.lv
+      pc.exp += pc.lv
+    when 1
+      event << "#{pc.name}は武器屋に行った。折れた直剣を#{lv}gpで買った。"
+      pc.gp -= pc.lv
+      pc.pw += pc.lv
+    when 2
+      event << "#{pc.name}は武器屋に行った。汚れた鎧を#{lv}gpで買った。"
+      pc.gp -= pc.lv
+      pc.hp += pc.lv
+    end
+    pc.place = "ダンジョン"
+    event << "#{pc.name}はダンジョンに入った。#{pc.to_s}"
     monsters << Monster.new if monsters.empty?
-    m = monsters[0]
-    dm = pc.pw + d3
-    event << "#{pc.name}は#{m.to_s}に攻撃。#{dm}ダメージ。"
-    m.hp -= dm
-    if m.hp <= 0
-      event << "#{m.to_s}は死んだ。"
-      monsters.shift
-      event << pc.levelup
-    else
-      dm = m.pw + d3
-      event << "#{m.to_s}の反撃。#{dm}ダメージ。"
-      pc.hp -= dm
-      if pc.hp <= 0
-        pc.pw += 1
-        pc.hp = 1
-        event << "#{pc.name}は地面に倒れソウルを失った。攻#{pc.pw}/防#{pc.hp}"
+    event << monsters.first.to_s
+    event << "#{pc.name}はどうする？戦う・探す・進む・逃げる。"
+  when pc.place == "ダンジョン"
+    case select_command([/た|戦/,/さ|探/,/す|進/,/に|逃/])
+    when 0
+      m = monsters[0]
+      dm = pc.pw + d3
+      event << "#{pc.name}は#{m.to_s}に攻撃。#{dm}ダメージ。"
+      m.hp -= dm
+      if m.hp <= 0
+        event << "#{m.to_s}は死んだ。"
+        monsters.shift
+        event << pc.levelup
       else
+        dm = m.pw + d3
+        event << "#{m.to_s}の反撃。#{dm}ダメージ。"
+        pc.hp -= dm
+        if pc.hp <= 0
+          pc.pw += 1
+          pc.hp = 1
+          event << "#{pc.name}は死に、カント寺院の灰から目覚めた。#{lv}gp捧げた。"
+          event << "#{pc.to_s}"
+          event << "王城と武器屋と防具屋が見える。#{pc.name}はどうする？"
+          pc.place = "リルガミン"
+        else
+        end
       end
+    when 1
+      if rand(6) < 3
+        g = rand(1..10) * pc.lv
+        pc.gp += g
+        event << "#{g}gp見つけた。"
+      end
+    when 2
+      event << "#{pc.name}は奥に進む。"
+    when 3
+      event << ""
+    end
+
+    case pc.plase
+    when "ダンジョン"
+      event << "#{pc.name}はどうする？戦う・探す・進む・逃げる。"
+    when "カント寺院"
+      event << "#{pc.name}は死に、カント寺院の灰から目覚めた。#{lv}gp捧げた。"
+      event << "#{pc.to_s}"
+      event << "王城と武器屋と防具屋が見える。#{pc.name}はどうする？"
+      pc.place = "リルガミン"
+    when "リルガミン"
+      event << "#{pc.name}は逃げ出した。"
+      event << "王城と武器屋と防具屋が見える。#{pc.name}はどうする？"
+      pc.place = "リルガミン"
     end
   end
 end

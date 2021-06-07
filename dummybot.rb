@@ -16,7 +16,7 @@ module DummyBot
       @listeners = []
     end
 
-    def message(contains: //, &block)
+    def message(contains: /./, &block)
       listeners << Listener.new(contains, block)
     end
 
@@ -49,7 +49,8 @@ module DummyBot
     attr_accessor :name
 
     def initialize
-      @name = "狂王の祭祀場"
+      @name = "一般"
+      # @name = "狂王の祭祀場"
     end
   end
 

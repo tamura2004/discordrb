@@ -18,7 +18,7 @@ else
 end
 
 RollDice.new(bot)
-Kakugen.new(bot)
+# Kakugen.new(bot)
 Greet.new(bot)
 Nannohi.new(bot)
 

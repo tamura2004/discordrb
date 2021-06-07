@@ -134,6 +134,7 @@ town_menues = Menues.new([
 dungeon_menues = Menues.new(
   [
     ["た", "戦う"],
+    ["ま", "魔法"],
     ["さ", "探す"],
     ["す", "進む"],
     ["に", "逃げる"],
@@ -208,10 +209,39 @@ bot.message do |event|
             end
           end
         end
+      when /魔法/
+        case pc.klass
+        when /魔法使い/
+          if pc.gp >= pc.lv
+            players.values.each do |fr|
+              if fr.depth == pc.depth
+                fr.pw += pc.lv
+              end
+            end
+            event << "味方全員の攻撃力が上昇した。"
+            pc.gp -= pc.lv
+          else
+            event << "所持金が足りない"
+          end
+        when /僧侶/
+          if pc.gp >= pc.lv
+            players.values.each do |fr|
+              if fr.depth == pc.depth
+                fr.hp += pc.lv
+              end
+            end
+            event << "味方全員の防御力が上昇した。"
+            pc.gp -= pc.lv
+          else
+            event << "所持金が足りない"
+          end
+        else
+          event << "#{pc.klass}は魔法を使えない"
+        end
       when /探す/
-        if monsters[pc.depth]
+        if monsters[pc.depth] && pc.klass != "盗賊"
           event << "モンスターが宝箱を守っている。"
-        elsif rand(6) < 3
+        elsif rand(6) < 3 || pc.klass == "盗賊"
           g = rand(1..10) * pc.depth
           pc.gp += g
           event << "#{g}gp見つけた。奥に進む。"
@@ -224,7 +254,13 @@ bot.message do |event|
           event << "モンスターが道を塞いでいる。"
         else
           event << "#{pc.name}は奥に進む。"
-          pc.depth += 1
+          pc.depth.upto(99) do |d|
+            if monsters[d]
+              pc.depth = d
+              break
+            end
+          end
+          pc.depth = 0 if pc.depth.nil?
         end
       when /逃げる/
         if pc.klass == "盗賊" || rand(6) < 3

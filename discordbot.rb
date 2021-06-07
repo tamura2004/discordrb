@@ -138,9 +138,7 @@ dungeon_menues = Menues.new(
 )
 
 bot.message do |event|
-  # next if event.channel.name != "狂王の祭祀場" && event.channel.name != "ボットデバッグ用"
-
-  pp 141
+  next if event.channel.name != "狂王の祭祀場" && event.channel.name != "ボットデバッグ用"
 
   id = event.author.id
   auther = event.author.display_name

@@ -28,14 +28,14 @@ end
 
 class Monster
   attr_accessor :name, :lv, :pw, :hp, :cdm
-  RANK = ["", "チーフ", "リーダー", "キング", "エンペラー", "ゴッド"]
-  NAME = %w(ゴブリン オーク バグベア スケルトン ミノタウルス ゴーレム ドラゴン)
+  RANK = ["", "チーフ", "リーダー", "スピード", "キング", "クリムゾン", "エンペラー", "ゴッド", "アルティメット"]
+  NAME = %w(スライム ゴブリン オーク ゾンビ バグベア スケルトン ミノタウルス マンティコア デーモン ゴーレム スフィンクス ドラゴン)
 
   def initialize(base_lv)
-    @lv = base_lv + rand(3)
-    @name = NAME[lv % 7] + RANK[lv / 7]
-    @pw = lv + d(3)
-    @hp = lv + d(3)
+    @lv = base_lv
+    @name = NAME[lv % (NAME.size)] + RANK[lv / (NAME.size)]
+    @pw = lv
+    @hp = lv
     @cdm = Hash.new(0)
   end
 
@@ -57,7 +57,10 @@ class Monster
 end
 
 players = {}
-monsters = []
+monsters = Array.new(100) do |i|
+  Monster.new(i)
+end
+
 races = [
   [/エルフ|える/, "エルフ", 2, 0],
   [/ドワーフ|どわ/, "ドワーフ", 0, 2],
@@ -110,8 +113,8 @@ class Menues
 
   def select(s)
     case s
-    when /[1-9]/
-      i = s.to_i - 1
+    when /[1-9１-９]/
+      i = s.tr("１-９","1-9").to_i - 1
       (menues[i] || menues.sample).label
     else
       m = menues.find { |m| s =~ /#{m.yomi}/ || s =~ /#{m.label}/ }
@@ -146,28 +149,12 @@ bot.message do |event|
   text = event.content
 
   if pc.nil? || text =~ /りせっと/
-    players[id] = Player.new(id)
+    players[id] = Player.new(id, monsters)
     event << "#{auther}さんのキャラクターネームは？"
   else
     case pc.place
     when /訓練場/
       event << pc.making(event)
-      # when pc.name.nil?
-      #   name = event.content
-      #   pc.name = name
-      #   event << "#{auther}さんのキャラクターは、#{name}さんです。種族は？"
-      # when pc.race.nil?
-      #   race = races.find do |r|
-      #     event.content =~ r[0]
-      #   end || races[-1]
-      #   pc.set_race(race)
-      #   event << "#{pc.name}さんは#{pc.race}。クラスは？"
-      # when pc.klass.nil?
-      #   klass = klasses.find do |c|
-      #     event.content =~ c[0]
-      #   end || klasses[-1]
-      #   pc.set_klass(klass)
-      #   pc.place = "リルガミン"
     when /リルガミン/
       case town_menues.select(event.content)
       when /王城/
@@ -193,40 +180,61 @@ bot.message do |event|
       when /ダンジョン/
         event << "#{pc.name}はダンジョンに入った"
         pc.place = "ダンジョン"
+        pc.depth = 1
       end
     when /ダンジョン/
       case dungeon_menues.select(event.content)
       when /戦う/
-        m = monsters[0]
-        dm = pc.pw + d(5)
-        event << "#{pc.name}は#{m.to_s}に攻撃。#{dm}ダメージ。"
-        m.get_damage(dm, id)
-        if m.dead?
-          event << "#{m.to_s}は死んだ。"
-          monsters.shift
-          event << pc.levelup(m.lv)
+        m = monsters[pc.depth]
+        if m.nil?
+          event << "#{pc.name}は武器を振り回した・・・がモンスターはいない。奥に進む。"
+          pc.depth += 1
         else
-          dm = m.pw + d(5)
-          event << "#{m.to_s}の反撃。#{dm}ダメージ。"
-          pc.hp -= dm
-          if pc.hp <= 0
-            pc.place = "カント寺院"
+          dm = pc.pw + d(5)
+          event << "#{pc.name}は#{m.to_s}に攻撃。#{dm}ダメージ。"
+          m.get_damage(dm, id)
+          if m.dead?
+            event << "#{m.to_s}は死んだ。" + pc.levelup(m.lv) + "#{pc.name}は奥に進む。"
+            monsters[pc.depth] = nil
+            pc.depth += 1
           else
+            dm = m.pw + d(5)
+            event << "#{m.to_s}の反撃。#{dm}ダメージ。"
+            pc.hp -= dm
+            if pc.hp <= 0
+              pc.place = "カント寺院"
+              pc.depth = 0
+            else
+            end
           end
         end
       when /探す/
-        if rand(6) < 3
-          g = rand(1..10) * pc.lv
+        if monsters[pc.depth]
+          event << "モンスターが宝箱を守っている。"
+        elsif rand(6) < 3
+          g = rand(1..10) * pc.depth
           pc.gp += g
-          event << "#{g}gp見つけた。"
+          event << "#{g}gp見つけた。奥に進む。"
         else
-          event << "なにも見つからなかった。"
+          event << "なにも見つからなかった。奥に進む。"
         end
+        pc.depth += 1
       when /進む/
-        event << "#{pc.name}は奥に進む。"
+        if monsters[pc.depth]
+          event << "モンスターが道を塞いでいる。"
+        else
+          event << "#{pc.name}は奥に進む。"
+          pc.depth += 1
+        end
       when /逃げる/
-        event << "#{pc.name}は逃げ出した。"
-        pc.place = "リルガミン"
+        if pc.klass == "盗賊" || rand(6) < 3
+          event << "#{pc.name}は逃げ出した。"
+          pc.place = "リルガミン"
+          pc.depth = 0
+        else
+          event << "逃げた方向はダンジョンの奥だった。"
+          pc.depth += 1
+        end
       end
     end
   end
@@ -235,13 +243,10 @@ bot.message do |event|
 
   case pc.place
   when "ダンジョン"
-    monsters << Monster.new(pc.lv) if monsters.empty?
-    event << monsters.first.to_s
     event << "#{pc}はどうする？#{dungeon_menues.message}"
   when "カント寺院"
     if pc.raisefromdead
       event << "#{pc.name}は死んだ。カント寺院で蘇生。#{pc.lv}gp寄付した。"
-      event << pc.to_s
       pc.place = "リルガミン"
     else
       event << "#{pc.name}は死んだ。蘇生費用が無い。ロストしました。"

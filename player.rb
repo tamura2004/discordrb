@@ -1,7 +1,7 @@
 class Player
   attr_accessor :name, :race, :klass, :lv
   attr_accessor :rpw, :pw, :rhp, :hp, :sp, :gp, :exp
-  attr_accessor :place, :depth
+  attr_accessor :place, :depth, :monsters
 
   RACES = [
     [/エルフ|える/, "エルフ", 2, 0],
@@ -16,12 +16,14 @@ class Player
     [/せん|戦士/, "戦士", "剣盾"],
   ]
 
-  def initialize(id)
+  def initialize(id, monsters)
     @id = id
+    @monsters = monsters
     @lv = 1
     @gp = 10
     @exp = 0
     @place = "訓練場"
+    @depth = 0
   end
 
   def making(event)
@@ -79,7 +81,24 @@ class Player
     gp >= 0
   end
 
+  def place_name
+    if place == "ダンジョン"
+      "迷宮#{depth}層"
+    else
+      "街"
+    end
+  end
+
+  def monster_name
+    m = monsters[depth]
+    if m.nil? || depth == 0
+      "モンスターなし"
+    else
+      m.to_s
+    end
+  end
+
   def to_s
-    "#{name}(#{race}の#{klass} #{lv}lv #{pw}/#{hp} #{gp}gp #{exp}xp)"
+    "#{name}(#{race}の#{klass} #{lv}lv #{pw}/#{hp} #{gp}gp #{exp}xp #{place_name} #{monster_name})"
   end
 end

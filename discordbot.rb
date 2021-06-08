@@ -159,9 +159,13 @@ bot.message do |event|
     when /リルガミン/
       case town_menues.select(event.content)
       when /王城/
-        event << "#{pc.name}は王城に行った。王様「支度金である」"
-        pc.gp += pc.lv
-        pc.exp -= pc.lv
+        if pc.exp >= pc.lv
+          event << "#{pc.name}は王城に行った。王様「支度金である」"
+          pc.gp += pc.lv
+          pc.exp -= pc.lv
+        else
+          event << "#{pc.name}は王城に行った。王様「もっと経験を積め」"
+        end
       when /武器/
         if pc.gp >= pc.lv
           event << "#{pc.name}は武器屋に行った。折れた直剣を#{pc.lv}gpで買った。"
@@ -200,44 +204,11 @@ bot.message do |event|
             pc.depth += 1
           else
             dm = m.pw + d(5)
-            event << "#{m.to_s}の反撃。#{dm}ダメージ。"
-            pc.hp -= dm
-            if pc.hp <= 0
-              pc.place = "カント寺院"
-              pc.depth = 0
-            else
-            end
+            event << pc.get_damage("#{m.to_s}の反撃。", dm)
           end
         end
       when /魔法/
-        case pc.klass
-        when /魔法使い/
-          if pc.gp >= pc.lv
-            players.values.each do |fr|
-              if fr.depth == pc.depth
-                fr.pw += pc.lv
-              end
-            end
-            event << "味方全員の攻撃力が上昇した。"
-            pc.gp -= pc.lv
-          else
-            event << "所持金が足りない"
-          end
-        when /僧侶/
-          if pc.gp >= pc.lv
-            players.values.each do |fr|
-              if fr.depth == pc.depth
-                fr.hp += pc.lv
-              end
-            end
-            event << "味方全員の防御力が上昇した。"
-            pc.gp -= pc.lv
-          else
-            event << "所持金が足りない"
-          end
-        else
-          event << "#{pc.klass}は魔法を使えない"
-        end
+        event << pc.use_magic(players, monsters)
       when /探す/
         if monsters[pc.depth] && pc.klass != "盗賊"
           event << "モンスターが宝箱を守っている。"
@@ -246,7 +217,7 @@ bot.message do |event|
           pc.gp += g
           event << "#{g}gp見つけた。奥に進む。"
         else
-          event << "なにも見つからなかった。奥に進む。"
+          event << pc.get_trap
         end
         pc.depth += 1
       when /進む/
@@ -270,6 +241,9 @@ bot.message do |event|
         else
           event << "逃げた方向はダンジョンの奥だった。"
           pc.depth += 1
+          if m = monsters[pc.depth]
+            event << pc.get_damage("#{m}の攻撃。", m.pw + d(5))
+          end
         end
       end
     end

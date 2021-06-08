@@ -43,7 +43,7 @@ class Player
     when klass.nil?
       data = KLASSES.find do |c|
         event.content =~ c[0]
-      end || KLASSES[-1]
+      end || KLASSES.sample
       set_klass(data)
       @place = "リルガミン"
     end
@@ -79,6 +79,57 @@ class Player
     @hp = lv + rhp
     @gp -= lv
     gp >= 0
+  end
+
+  def use_magic(players, monsters)
+    case
+    when !use_magic?
+      "#{klass}は魔法を使えない。"
+    when gp < lv
+      "所持金が足りない。"
+    else
+      @gp -= lv
+      players.values.each do |pc|
+        magic(pc)
+      end
+      magic_message
+    end
+  end
+
+  def magic(pc)
+    case klass
+    when /魔法使い/
+      pc.pw += lv
+    when /僧侶/
+      pc.hp += lv
+    end
+  end
+
+  def magic_message
+    case klass
+    when /魔法使い/
+      "味方全員の攻撃力が上昇した。"
+    when /僧侶/
+      "味方全員の防御力が上昇した。"
+    end
+  end
+
+  def use_magic?
+    klass == "魔法使い" || klass == "僧侶"
+  end
+
+  def get_damage(msg, dm)
+    @hp -= dm
+    if hp <= 0
+      @place = "カント寺院"
+      @depth = 0
+    end
+    "#{msg}#{dm}ダメージ"
+  end
+
+  def get_trap
+    dm = Array.new(depth){ rand(0..1) }.sum
+    get_damage("罠だ！", dm)
   end
 
   def place_name

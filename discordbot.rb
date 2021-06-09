@@ -64,29 +64,11 @@ bot.message do |event|
     when /リルガミン/
       case town_menues.select(event.content).to_s
       when /王城/
-        if pc.exp >= pc.lv
-          event << "#{pc.name}は王城に行った。王様「支度金である」"
-          pc.gp += pc.lv
-          pc.exp -= pc.lv
-        else
-          event << "#{pc.name}は王城に行った。王様「もっと経験を積め」"
-        end
+        event << pc.meet_king
       when /武器/
-        if pc.gp >= pc.lv
-          event << "#{pc.name}は武器屋に行った。折れた直剣を#{pc.lv}gpで買った。"
-          pc.gp -= pc.lv
-          pc.pw += pc.lv
-        else
-          event << "#{pc.name}は武器屋に行ったが所持金が足りない。"
-        end
+        event << pc.buy_weapon
       when /防具/
-        if pc.gp >= pc.lv
-          event << "#{pc.name}は防具屋に行った。汚れた鎧を#{pc.lv}gpで買った。"
-          pc.gp -= pc.lv
-          pc.hp += pc.lv
-        else
-          event << "#{pc.name}は防具屋に行ったが所持金が足りない。"
-        end
+        event << pc.buy_armor
       when /ダンジョン/
         event << "#{pc.name}はダンジョンに入った"
         pc.place = "ダンジョン"

@@ -136,6 +136,36 @@ class Player
     "#{msg}#{dm}ダメージ"
   end
 
+  def meet_king
+    if exp >= lv
+      @gp += lv
+      @exp -= lv
+      "#{name}は王城に行った。王様「支度金である」"
+    else
+      "#{name}は王城に行った。王様「もっと経験を積め」"
+    end
+  end
+
+  def buy_weapon
+    if gp >= lv
+      @gp -= lv
+      @pw += lv
+      "#{name}は武器屋に行った。折れた直剣を#{lv}gpで買った。"
+    else
+      "#{name}は武器屋に行ったが所持金が足りない。"
+    end
+  end
+
+  def buy_armor
+    if gp >= lv
+      @gp -= lv
+      @hp += lv
+      "#{name}は防具屋に行った。汚れた鎧を#{lv}gpで買った。"
+    else
+      event << "#{name}は防具屋に行ったが所持金が足りない。"
+    end
+  end
+
   def place_name
     if place == "ダンジョン"
       "迷宮#{depth}層"

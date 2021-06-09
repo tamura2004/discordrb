@@ -1,0 +1,44 @@
+
+; <<>> DiG 9.16.1-Ubuntu <<>> ns symantec.com @a.gtld-servers.net
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 42411
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 2, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;symantec.com.			IN	NS
+
+;; AUTHORITY SECTION:
+symantec.com.		172800	IN	NS	pdns1.cscdns.net.
+symantec.com.		172800	IN	NS	pdns2.cscdns.net.
+
+;; Query time: 200 msec
+;; SERVER: 192.5.6.30#53(192.5.6.30)
+;; WHEN: Wed Jun 09 12:49:50 JST 2021
+;; MSG SIZE  rcvd: 91
+
+
+; <<>> DiG 9.16.1-Ubuntu <<>> ns cscdns.com @a.gtld-servers.net
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 8579
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 2, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;cscdns.com.			IN	NS
+
+;; AUTHORITY SECTION:
+cscdns.com.		172800	IN	NS	pdns1.cscdns.net.
+cscdns.com.		172800	IN	NS	pdns2.cscdns.net.
+
+;; Query time: 240 msec
+;; SERVER: 192.5.6.30#53(192.5.6.30)
+;; WHEN: Wed Jun 09 12:50:14 JST 2021
+;; MSG SIZE  rcvd: 89
+

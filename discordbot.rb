@@ -55,6 +55,9 @@ bot.message do |event|
   text = event.content
 
   if pc.nil? || text =~ /りせっと/
+    monsters = Array.new(100) do |i|
+      Monster.new(i)
+    end
     players[id] = Player.new(id, monsters)
     event << "#{auther}さんのキャラクターネームは？"
   else

@@ -1,20 +1,29 @@
+require "./menu.rb"
+require "./fighter.rb"
+require "./cleric.rb"
+require "./wizard.rb"
+require "./rogue.rb"
+require "./human.rb"
+require "./elf.rb"
+require "./dwarf.rb"
+
 class Player
   attr_accessor :name, :race, :klass, :lv
   attr_accessor :rpw, :pw, :rhp, :hp, :sp, :gp, :exp
   attr_accessor :place, :depth, :monsters
 
-  RACES = [
-    [/エルフ|える/, "エルフ", 2, 0],
-    [/ドワーフ|どわ/, "ドワーフ", 0, 2],
-    [/人間/, "人間", 1, 1],
-  ]
+  RACES = Menues.new([
+    Human,
+    Elf,
+    Dwarf,
+  ])
 
-  KLASSES = [
-    [/そう|僧侶/, "僧侶", "治癒"],
-    [/まほ|魔法/, "魔法使い", "火球"],
-    [/とう|盗賊/, "盗賊", "毒罠"],
-    [/せん|戦士/, "戦士", "剣盾"],
-  ]
+  KLASSES = Menues.new([
+    Fighter,
+    Cleric,
+    Wizard,
+    Rogue,
+  ])
 
   def initialize(id, monsters)
     @id = id
@@ -33,33 +42,26 @@ class Player
     case
     when name.nil?
       @name = text
-      "#{author}さんのキャラクターは、#{name}さんです。種族は？"
+      "#{author}さんのキャラクターは、#{name}さんです。種族は？#{RACES.message}"
     when race.nil?
-      data = RACES.find do |r|
-        event.content =~ r[0]
-      end || RACES.sample
-      set_race(data)
-      "#{name}さんは#{data[1]}。クラスは？"
+      set_race(event)
+      "#{name}さんは#{race}。クラスは？#{KLASSES.message}"
     when klass.nil?
-      data = KLASSES.find do |c|
-        event.content =~ c[0]
-      end || KLASSES.sample
-      set_klass(data)
+      set_klass(event)
       @place = "リルガミン"
     end
   end
 
-  def set_race(data)
-    _, name, @rpw, @rhp = data
-    @race = name
+  def set_race(event)
+    @race = RACES.select(event.content)
+    extend @race
     @pw = lv + rpw
     @hp = lv + rhp
   end
 
-  def set_klass(data)
-    _, name, sp = data
-    @klass = name
-    @sp = sp
+  def set_klass(event)
+    @klass = KLASSES.select(event.content)
+    extend @klass
   end
 
   def levelup(e)
@@ -68,7 +70,7 @@ class Player
       @lv += 1
       @pw = lv + rpw
       @hp = lv + rhp
-      "#{name}はレベルアップ！#{klass} #{to_s}"
+      "#{name}はレベルアップ！#{to_s}"
     else
       "#{name}は#{e}経験値を得た。"
     end
@@ -82,40 +84,47 @@ class Player
   end
 
   def use_magic(players, monsters)
-    case
-    when !use_magic?
-      "#{klass}は魔法を使えない。"
-    when gp < lv
-      "所持金が足りない。"
+    "#{klass}は魔法を使えない。"
+  end
+
+  def find_treasure(players, monsters)
+    if monsters[depth]
+      "モンスターが宝箱を守っている"
+    elsif rand(6) < 3
+      g = depth * rand(1..3)
+      @gp += g
+      @depth += 1
+      "#{g}gp見つけた。奥に進む。"
     else
-      @gp -= lv
-      players.values.each do |pc|
-        magic(pc)
+      dm = depth + rand(3)
+      get_damage("罠だ！", dm)
+    end
+  end
+
+  def go_deep(monsters)
+    if monsters[depth]
+      "モンスターが道を塞いでいる。"
+    else
+      depth.upto(99) do |d|
+        if monsters[d]
+          @depth = d
+          break
+        end
       end
-      magic_message
+      @depth = 0 if depth.nil?
+      "#{name}は奥に進む。"
     end
   end
 
-  def magic(pc)
-    case klass
-    when /魔法使い/
-      pc.pw += lv
-    when /僧侶/
-      pc.hp += lv
+  def escape
+    if rand(6) < 3
+      @place = "リルガミン"
+      @depth = 0
+      "#{name}は逃げ出した。"
+    else
+      @depth += 1
+      "逃げた方向はダンジョンの奥だった。" + get_damage("罠だ！", rand(3))
     end
-  end
-
-  def magic_message
-    case klass
-    when /魔法使い/
-      "味方全員の攻撃力が上昇した。"
-    when /僧侶/
-      "味方全員の防御力が上昇した。"
-    end
-  end
-
-  def use_magic?
-    klass == "魔法使い" || klass == "僧侶"
   end
 
   def get_damage(msg, dm)
@@ -125,11 +134,6 @@ class Player
       @depth = 0
     end
     "#{msg}#{dm}ダメージ"
-  end
-
-  def get_trap
-    dm = Array.new(depth){ rand(0..1) }.sum
-    get_damage("罠だ！", dm)
   end
 
   def place_name

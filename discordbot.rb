@@ -1,24 +1,24 @@
 require "discordrb"
 require "yaml"
+require "./menu.rb"
 require "./dummybot.rb"
 require "./rolldice.rb"
 require "./kakugen.rb"
 require "./greet.rb"
 require "./nannohi.rb"
+require "./monster.rb"
 require "./player.rb"
-
-TOKEN = ENV["DISCORD_BOT_TOKEN"]
-TOKEN.freeze
 
 bot = nil
 if ENV["DUMMY"] == "YES"
   bot = DummyBot::Bot.new
 else
+  TOKEN = ENV["DISCORD_BOT_TOKEN"]
+  TOKEN.freeze
   bot = Discordrb::Bot.new token: TOKEN
 end
 
 RollDice.new(bot)
-# Kakugen.new(bot)
 Greet.new(bot)
 Nannohi.new(bot)
 
@@ -26,120 +26,25 @@ def d(n)
   rand(n) - (n / 2)
 end
 
-class Monster
-  attr_accessor :name, :lv, :pw, :hp, :cdm
-  RANK = ["", "チーフ", "リーダー", "スピード", "キング", "クリムゾン", "エンペラー", "ゴッド", "アルティメット"]
-  NAME = %w(スライム ゴブリン オーク ゾンビ バグベア スケルトン ミノタウルス マンティコア デーモン ゴーレム スフィンクス ドラゴン)
-
-  def initialize(base_lv)
-    @lv = base_lv
-    @name = NAME[lv % (NAME.size)] + RANK[lv / (NAME.size)]
-    @pw = lv
-    @hp = lv
-    @cdm = Hash.new(0)
-  end
-
-  def get_damage(dm, pc)
-    cdm[pc] = dm if cdm[pc] < dm
-  end
-
-  def damage
-    cdm.values.sum
-  end
-
-  def dead?
-    hp <= damage
-  end
-
-  def to_s
-    "#{name} 攻#{pw}/防#{hp - damage}"
-  end
-end
-
 players = {}
 monsters = Array.new(100) do |i|
   Monster.new(i)
 end
 
-races = [
-  [/エルフ|える/, "エルフ", 2, 0],
-  [/ドワーフ|どわ/, "ドワーフ", 0, 2],
-  [/人間/, "人間", 1, 1],
-]
-klasses = [
-  [/そう|僧侶/, "僧侶", "治癒"],
-  [/まほ|魔法/, "魔法使い", "火球"],
-  [/とう|盗賊/, "盗賊", "毒罠"],
-  [/せん|戦士/, "戦士", "剣盾"],
-]
-
-def select_command(rs, a)
-  rs.index { |r| r =~ a } || rand(rs.size)
-end
-
-class Menu
-  attr_accessor :yomi, :label
-
-  def initialize(yomi, label)
-    @yomi = yomi
-    @label = label
-  end
-
-  def to_s
-    "[#{yomi}]#{label}"
-  end
-end
-
-class Menues
-  attr_accessor :menues
-
-  def initialize(items)
-    @menues = items.map do |item|
-      Menu.new(*item)
-    end
-  end
-
-  def <<(menu)
-    menues << menu
-  end
-
-  def message
-    msg = []
-    menues.each_with_index do |menu, i|
-      msg << "#{i + 1}.#{menu}"
-    end
-    msg.join(",")
-  end
-
-  def select(s)
-    case s
-    when /[1-9１-９]/
-      i = s.tr("１-９","1-9").to_i - 1
-      (menues[i] || menues.sample).label
-    else
-      m = menues.find { |m| s =~ /#{m.yomi}/ || s =~ /#{m.label}/ }
-      m ||= menues.sample
-      m.label
-    end
-  end
-end
-
 town_menues = Menues.new([
-  ["お", "王城"],
-  ["ぶ", "武器屋"],
-  ["ぼ", "防具屋"],
-  ["だ", "ダンジョン"],
+  Menu.new("お", "王城"),
+  Menu.new("ぶ", "武器屋"),
+  Menu.new("ぼ", "防具屋"),
+  Menu.new("だ", "ダンジョン"),
 ])
 
-dungeon_menues = Menues.new(
-  [
-    ["た", "戦う"],
-    ["ま", "魔法"],
-    ["さ", "探す"],
-    ["す", "進む"],
-    ["に", "逃げる"],
-  ]
-)
+dungeon_menues = Menues.new([
+  Menu.new("た", "戦う"),
+  Menu.new("ま", "魔法"),
+  Menu.new("さ", "探す"),
+  Menu.new("す", "進む"),
+  Menu.new("に", "逃げる"),
+])
 
 bot.message do |event|
   next if event.channel.name != "狂王の祭祀場" && event.channel.name != "ボットデバッグ用"
@@ -157,7 +62,7 @@ bot.message do |event|
     when /訓練場/
       event << pc.making(event)
     when /リルガミン/
-      case town_menues.select(event.content)
+      case town_menues.select(event.content).to_s
       when /王城/
         if pc.exp >= pc.lv
           event << "#{pc.name}は王城に行った。王様「支度金である」"
@@ -188,7 +93,7 @@ bot.message do |event|
         pc.depth = 1
       end
     when /ダンジョン/
-      case dungeon_menues.select(event.content)
+      case dungeon_menues.select(event.content).to_s
       when /戦う/
         m = monsters[pc.depth]
         if m.nil?
@@ -210,41 +115,11 @@ bot.message do |event|
       when /魔法/
         event << pc.use_magic(players, monsters)
       when /探す/
-        if monsters[pc.depth] && pc.klass != "盗賊"
-          event << "モンスターが宝箱を守っている。"
-        elsif rand(6) < 3 || pc.klass == "盗賊"
-          g = rand(1..10) * pc.depth
-          pc.gp += g
-          event << "#{g}gp見つけた。奥に進む。"
-        else
-          event << pc.get_trap
-        end
-        pc.depth += 1
+        event << pc.find_treasure(players, monsters)
       when /進む/
-        if monsters[pc.depth]
-          event << "モンスターが道を塞いでいる。"
-        else
-          event << "#{pc.name}は奥に進む。"
-          pc.depth.upto(99) do |d|
-            if monsters[d]
-              pc.depth = d
-              break
-            end
-          end
-          pc.depth = 0 if pc.depth.nil?
-        end
+        event << pc.go_deep(monsters)
       when /逃げる/
-        if pc.klass == "盗賊" || rand(6) < 3
-          event << "#{pc.name}は逃げ出した。"
-          pc.place = "リルガミン"
-          pc.depth = 0
-        else
-          event << "逃げた方向はダンジョンの奥だった。"
-          pc.depth += 1
-          if m = monsters[pc.depth]
-            event << pc.get_damage("#{m}の攻撃。", m.pw + d(5))
-          end
-        end
+        event << pc.escape
       end
     end
   end

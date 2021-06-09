@@ -1,32 +1,29 @@
-require "./dice"
-
-M = [
-  {
-    name: "ゴブリン",
-    hp: "2d6",
-    ac: 15,
-    atk: 4,
-    dmg: "1d6+2",
-    exp: 50,
-  },
-]
-
-# モンスター
 class Monster
-  @@id = 0
-  attr_accessor :id, :name, :hp, :ac, :atk, :dmg, :exp, :y, :x
+  attr_accessor :name, :lv, :pw, :hp, :cdm
+  RANK = ["", "チーフ", "リーダー", "スピード", "キング", "クリムゾン", "エンペラー", "ゴッド", "アルティメット"]
+  NAME = %w(スライム ゴブリン オーク ゾンビ バグベア スケルトン ミノタウルス マンティコア デーモン ゴーレム スフィンクス ドラゴン)
 
-  def initialize(y, x)
-    @y = y
-    @x = x
-    @id = @@id
-    @@id += 1
-    m = M.sample
-    @name = m[:name]
-    @hp = r m[:hp]
-    @ac = m[:ac]
-    @atk = m[:atk]
-    @dmg = m[:dmg]
-    @exp = m[:exp]
+  def initialize(base_lv)
+    @lv = base_lv
+    @name = NAME[lv % (NAME.size)] + RANK[lv / (NAME.size)]
+    @pw = lv
+    @hp = lv
+    @cdm = Hash.new(0)
+  end
+
+  def get_damage(dm, pc)
+    cdm[pc] = dm if cdm[pc] < dm
+  end
+
+  def damage
+    cdm.values.sum
+  end
+
+  def dead?
+    hp <= damage
+  end
+
+  def to_s
+    "#{name} 攻#{pw}/防#{hp - damage}"
   end
 end
